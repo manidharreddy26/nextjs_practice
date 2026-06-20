@@ -1,0 +1,9 @@
+.mobile {
+  background-color: aqua;
+  color: red;
+}
+.discount {
+  background-color: brown;
+  color: green;
+  border: 2px, solid, red;
+}
