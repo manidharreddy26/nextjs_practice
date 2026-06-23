@@ -1,0 +1,22 @@
+.formSection {
+  border: 2px solid gray;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 10px;
+}
+
+.fromInp input {
+  margin-top: 5px;
+  width: 25rem;
+  height: 3rem;
+}
+.formBtn {
+  width: 10rem;
+  height: 2rem;
+  color: red;
+  background-color: aqua;
+  margin-top: 20px;
+}
