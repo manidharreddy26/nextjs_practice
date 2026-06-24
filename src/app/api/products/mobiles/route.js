@@ -1,40 +1,228 @@
 import MobileModel from "@/utils/models/mobiles";
 import { NextResponse } from "next/server";
 import { DBConnection } from "@/utils/config/db";
+import mongoose from "mongoose";
 
 const connectDB = async () => {
   await DBConnection();
 };
-connectDB();
 
+// GET: Get all mobiles
 export async function GET() {
-  const mobiledata = await MobileModel.find({});
-  return NextResponse.json({ mobiledata });
+  try {
+    await connectDB();
+
+    const mobiledata = await MobileModel.find({}).sort({ _id: -1 });
+
+    return NextResponse.json({ mobiledata }, { status: 200 });
+  } catch (error) {
+    console.log("GET MOBILE ERROR:", error);
+
+    return NextResponse.json(
+      { message: "Failed to get mobiles" },
+      { status: 500 },
+    );
+  }
 }
 
+// POST: Add mobile
 export async function POST(request) {
-  const { title, model, price } = await request.json();
-  await MobileModel.create({ title, model, price });
-  return NextResponse.json({ Success: "Mobile Added" });
+  try {
+    await connectDB();
+
+    const { title, model, price } = await request.json();
+
+    const cleanTitle = title?.trim();
+    const cleanModel = model?.trim();
+    const numericPrice = Number(price);
+
+    if (!cleanTitle || !cleanModel || !price) {
+      return NextResponse.json(
+        { message: "Title, model and price are required" },
+        { status: 400 },
+      );
+    }
+
+    if (cleanTitle.length < 2) {
+      return NextResponse.json(
+        { message: "Mobile title must contain at least 2 characters" },
+        { status: 400 },
+      );
+    }
+
+    if (cleanModel.length < 2) {
+      return NextResponse.json(
+        { message: "Mobile model must contain at least 2 characters" },
+        { status: 400 },
+      );
+    }
+
+    if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+      return NextResponse.json(
+        { message: "Mobile price must be greater than 0" },
+        { status: 400 },
+      );
+    }
+
+    const existingMobile = await MobileModel.findOne({
+      title: cleanTitle,
+      model: cleanModel,
+    });
+
+    if (existingMobile) {
+      return NextResponse.json(
+        { message: "This mobile already exists" },
+        { status: 409 },
+      );
+    }
+
+    const newMobile = await MobileModel.create({
+      title: cleanTitle,
+      model: cleanModel,
+      price: numericPrice,
+    });
+
+    return NextResponse.json(
+      {
+        message: "Mobile added successfully",
+        mobile: newMobile,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    console.log("POST MOBILE ERROR:", error);
+
+    return NextResponse.json(
+      { message: "Failed to add mobile" },
+      { status: 500 },
+    );
+  }
 }
 
+// PUT: Update mobile by id
 export async function PUT(request) {
-  const mobileId = await request.nextUrl.searchParams.get("id");
-  const {
-    newtitle: title,
-    newmodel: model,
-    newprice: price,
-  } = await request.json();
+  try {
+    await connectDB();
 
-  await MobileModel.findByIdAndUpdate(mobileId, { title, model, price });
+    const mobileId = request.nextUrl.searchParams.get("id");
 
-  return NextResponse.json({ mgs: "Mobile is updated" });
+    if (!mobileId || !mongoose.Types.ObjectId.isValid(mobileId)) {
+      return NextResponse.json(
+        { message: "Valid mobile ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const { newtitle, newmodel, newprice } = await request.json();
+
+    const cleanTitle = newtitle?.trim();
+    const cleanModel = newmodel?.trim();
+    const numericPrice = Number(newprice);
+
+    if (!cleanTitle || !cleanModel || !newprice) {
+      return NextResponse.json(
+        { message: "Title, model and price are required" },
+        { status: 400 },
+      );
+    }
+
+    if (cleanTitle.length < 2 || cleanModel.length < 2) {
+      return NextResponse.json(
+        { message: "Title and model must contain at least 2 characters" },
+        { status: 400 },
+      );
+    }
+
+    if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+      return NextResponse.json(
+        { message: "Mobile price must be greater than 0" },
+        { status: 400 },
+      );
+    }
+
+    const duplicateMobile = await MobileModel.findOne({
+      title: cleanTitle,
+      model: cleanModel,
+      _id: { $ne: mobileId },
+    });
+
+    if (duplicateMobile) {
+      return NextResponse.json(
+        { message: "Another mobile with this title and model already exists" },
+        { status: 409 },
+      );
+    }
+
+    const updatedMobile = await MobileModel.findByIdAndUpdate(
+      mobileId,
+      {
+        title: cleanTitle,
+        model: cleanModel,
+        price: numericPrice,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!updatedMobile) {
+      return NextResponse.json(
+        { message: "Mobile not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        message: "Mobile updated successfully",
+        mobile: updatedMobile,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.log("PUT MOBILE ERROR:", error);
+
+    return NextResponse.json(
+      { message: "Failed to update mobile" },
+      { status: 500 },
+    );
+  }
 }
 
+// DELETE: Delete mobile by id
 export async function DELETE(request) {
-  const mobileId = await request.nextUrl.searchParams.get("id");
-  await MobileModel.findByIdAndDelete(mobileId);
-  return NextResponse.json({
-    msg: "Mobile is Deleted",
-  });
+  try {
+    await connectDB();
+
+    const mobileId = request.nextUrl.searchParams.get("id");
+
+    if (!mobileId || !mongoose.Types.ObjectId.isValid(mobileId)) {
+      return NextResponse.json(
+        { message: "Valid mobile ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const deletedMobile = await MobileModel.findByIdAndDelete(mobileId);
+
+    if (!deletedMobile) {
+      return NextResponse.json(
+        { message: "Mobile not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Mobile deleted successfully" },
+      { status: 200 },
+    );
+  } catch (error) {
+    console.log("DELETE MOBILE ERROR:", error);
+
+    return NextResponse.json(
+      { message: "Failed to delete mobile" },
+      { status: 500 },
+    );
+  }
 }

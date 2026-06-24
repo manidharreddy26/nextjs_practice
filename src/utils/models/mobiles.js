@@ -1,23 +1,29 @@
 import mongoose from "mongoose";
 
-const MobileScheme = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    unique: true,
+const MobileSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    model: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
   },
-  model: {
-    type: String,
-    required: true,
-    unique: true,
+  {
+    timestamps: true,
   },
-  price: {
-    type: Number,
-    required: true,
-  },
-});
+);
 
 const MobileModel =
-  mongoose.models.mobile || mongoose.model(`mobile`, MobileScheme);
+  mongoose.models.Mobile || mongoose.model("Mobile", MobileSchema);
 
 export default MobileModel;

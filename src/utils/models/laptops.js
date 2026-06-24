@@ -1,23 +1,30 @@
 import mongoose from "mongoose";
 
-const LaptopSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    unique: true,
+const LaptopSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    model: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
   },
-  model: {
-    type: String,
-    required: true,
-    unique: true,
+  {
+    timestamps: true,
   },
-  price: {
-    type: Number,
-    required: true,
-  },
-});
+);
 
+// "Laptop" must be exactly the same in both places
 const LaptopModel =
-  mongoose.models.Laptop || mongoose.model(`laptop`, LaptopSchema);
+  mongoose.models.Laptop || mongoose.model("Laptop", LaptopSchema);
 
 export default LaptopModel;
