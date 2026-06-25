@@ -7,7 +7,6 @@ const connectDB = async () => {
   await DBConnection();
 };
 
-// GET: Get all mobiles
 export async function GET() {
   try {
     await connectDB();
@@ -25,41 +24,44 @@ export async function GET() {
   }
 }
 
-// POST: Add mobile
 export async function POST(request) {
   try {
     await connectDB();
 
-    const { title, model, price } = await request.json();
+    const { title, model, price, image } = await request.json();
 
     const cleanTitle = title?.trim();
     const cleanModel = model?.trim();
     const numericPrice = Number(price);
 
-    if (!cleanTitle || !cleanModel || !price) {
+    if (!cleanTitle || !cleanModel || !price || !image) {
       return NextResponse.json(
-        { message: "Title, model and price are required" },
+        { message: "Title, model, price and image are required" },
         { status: 400 },
       );
     }
 
-    if (cleanTitle.length < 2) {
+    if (cleanTitle.length < 2 || cleanTitle.length > 60) {
       return NextResponse.json(
-        { message: "Mobile title must contain at least 2 characters" },
+        { message: "Mobile title must contain 2 to 60 characters" },
         { status: 400 },
       );
     }
 
-    if (cleanModel.length < 2) {
+    if (cleanModel.length < 2 || cleanModel.length > 60) {
       return NextResponse.json(
-        { message: "Mobile model must contain at least 2 characters" },
+        { message: "Mobile model must contain 2 to 60 characters" },
         { status: 400 },
       );
     }
 
-    if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+    if (
+      Number.isNaN(numericPrice) ||
+      numericPrice <= 0 ||
+      numericPrice > 10000000
+    ) {
       return NextResponse.json(
-        { message: "Mobile price must be greater than 0" },
+        { message: "Enter a valid mobile price" },
         { status: 400 },
       );
     }
@@ -80,6 +82,7 @@ export async function POST(request) {
       title: cleanTitle,
       model: cleanModel,
       price: numericPrice,
+      image,
     });
 
     return NextResponse.json(
@@ -99,7 +102,6 @@ export async function POST(request) {
   }
 }
 
-// PUT: Update mobile by id
 export async function PUT(request) {
   try {
     await connectDB();
@@ -113,7 +115,7 @@ export async function PUT(request) {
       );
     }
 
-    const { newtitle, newmodel, newprice } = await request.json();
+    const { newtitle, newmodel, newprice, newimage } = await request.json();
 
     const cleanTitle = newtitle?.trim();
     const cleanModel = newmodel?.trim();
@@ -126,16 +128,25 @@ export async function PUT(request) {
       );
     }
 
-    if (cleanTitle.length < 2 || cleanModel.length < 2) {
+    if (
+      cleanTitle.length < 2 ||
+      cleanTitle.length > 60 ||
+      cleanModel.length < 2 ||
+      cleanModel.length > 60
+    ) {
       return NextResponse.json(
-        { message: "Title and model must contain at least 2 characters" },
+        { message: "Title and model must contain 2 to 60 characters" },
         { status: 400 },
       );
     }
 
-    if (Number.isNaN(numericPrice) || numericPrice <= 0) {
+    if (
+      Number.isNaN(numericPrice) ||
+      numericPrice <= 0 ||
+      numericPrice > 10000000
+    ) {
       return NextResponse.json(
-        { message: "Mobile price must be greater than 0" },
+        { message: "Enter a valid mobile price" },
         { status: 400 },
       );
     }
@@ -153,13 +164,20 @@ export async function PUT(request) {
       );
     }
 
+    const updateData = {
+      title: cleanTitle,
+      model: cleanModel,
+      price: numericPrice,
+    };
+
+    // Keep the old image if no new image was selected
+    if (newimage) {
+      updateData.image = newimage;
+    }
+
     const updatedMobile = await MobileModel.findByIdAndUpdate(
       mobileId,
-      {
-        title: cleanTitle,
-        model: cleanModel,
-        price: numericPrice,
-      },
+      updateData,
       {
         new: true,
         runValidators: true,
@@ -190,7 +208,6 @@ export async function PUT(request) {
   }
 }
 
-// DELETE: Delete mobile by id
 export async function DELETE(request) {
   try {
     await connectDB();

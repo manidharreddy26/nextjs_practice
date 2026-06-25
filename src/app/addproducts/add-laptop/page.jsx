@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import styles from "../products.module.css";
 
@@ -7,6 +8,8 @@ const AddLaptopPage = () => {
   const [title, setTitle] = useState("");
   const [model, setModel] = useState("");
   const [price, setPrice] = useState("");
+  const [image, setImage] = useState("");
+  const [imagePreview, setImagePreview] = useState("");
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -14,7 +17,6 @@ const AddLaptopPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
     const cleanTitle = title.trim();
     const cleanModel = model.trim();
     const numericPrice = Number(price);
@@ -43,9 +45,59 @@ const AddLaptopPage = () => {
       newErrors.price = "Enter a valid laptop price";
     }
 
-    setErrors(newErrors);
+    if (!image) {
+      newErrors.image = "Laptop image is required";
+    }
 
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const imageHandler = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      setImage("");
+      setImagePreview("");
+      e.target.value = "";
+
+      setErrors((prev) => ({
+        ...prev,
+        image: "Only JPG, PNG, and WEBP images are allowed",
+      }));
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setImage("");
+      setImagePreview("");
+      e.target.value = "";
+
+      setErrors((prev) => ({
+        ...prev,
+        image: "Image size must be less than 2 MB",
+      }));
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setImage(reader.result);
+      setImagePreview(reader.result);
+
+      setErrors((prev) => ({
+        ...prev,
+        image: "",
+        api: "",
+      }));
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const laptopDataHandler = async (e) => {
@@ -53,9 +105,7 @@ const AddLaptopPage = () => {
 
     setSuccessMessage("");
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       setIsLoading(true);
@@ -69,6 +119,7 @@ const AddLaptopPage = () => {
           title: title.trim(),
           model: model.trim(),
           price: Number(price),
+          image,
         }),
       });
 
@@ -86,8 +137,13 @@ const AddLaptopPage = () => {
       setTitle("");
       setModel("");
       setPrice("");
+      setImage("");
+      setImagePreview("");
       setErrors({});
-    } catch (error) {
+
+      // Clears the selected file from file input
+      document.getElementById("image").value = "";
+    } catch {
       setErrors({
         api: "Something went wrong. Please try again.",
       });
@@ -165,6 +221,34 @@ const AddLaptopPage = () => {
 
           {errors.price && (
             <small className={styles.errorMessage}>{errors.price}</small>
+          )}
+        </div>
+
+        <div className={styles.fromInp}>
+          <label htmlFor="image">Laptop Image</label>
+
+          <input
+            id="image"
+            type="file"
+            accept="image/jpeg, image/png, image/webp"
+            onChange={imageHandler}
+          />
+
+          <small>Allowed: JPG, PNG, WEBP. Maximum size: 2 MB.</small>
+
+          {errors.image && (
+            <small className={styles.errorMessage}>{errors.image}</small>
+          )}
+
+          {imagePreview && (
+            <Image
+              src={imagePreview}
+              alt="Selected laptop preview"
+              width={140}
+              height={100}
+              className={styles.imagePreview}
+              unoptimized
+            />
           )}
         </div>
 

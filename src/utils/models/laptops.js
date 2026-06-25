@@ -17,13 +17,16 @@ const LaptopSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    image: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,
   },
 );
 
-// "Laptop" must be exactly the same in both places
 const LaptopModel =
   mongoose.models.Laptop || mongoose.model("Laptop", LaptopSchema);
 

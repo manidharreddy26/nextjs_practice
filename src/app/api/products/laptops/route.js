@@ -18,47 +18,39 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to get laptops" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-// POST: Add laptop
 export async function POST(request) {
   try {
     await connectDB();
 
-    const { title, model, price } = await request.json();
+    const { title, model, price, image } = await request.json();
 
     const cleanTitle = title?.trim();
     const cleanModel = model?.trim();
     const numericPrice = Number(price);
 
-    if (!cleanTitle || !cleanModel || !price) {
+    if (!cleanTitle || !cleanModel || !price || !image) {
       return NextResponse.json(
-        { message: "Title, model and price are required" },
-        { status: 400 }
+        { message: "Title, model, price and image are required" },
+        { status: 400 },
       );
     }
 
-    if (cleanTitle.length < 2) {
+    if (cleanTitle.length < 2 || cleanModel.length < 2) {
       return NextResponse.json(
-        { message: "Laptop title must contain at least 2 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (cleanModel.length < 2) {
-      return NextResponse.json(
-        { message: "Laptop model must contain at least 2 characters" },
-        { status: 400 }
+        { message: "Title and model must contain at least 2 characters" },
+        { status: 400 },
       );
     }
 
     if (Number.isNaN(numericPrice) || numericPrice <= 0) {
       return NextResponse.json(
         { message: "Laptop price must be greater than 0" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +62,7 @@ export async function POST(request) {
     if (existingLaptop) {
       return NextResponse.json(
         { message: "This laptop already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -78,6 +70,7 @@ export async function POST(request) {
       title: cleanTitle,
       model: cleanModel,
       price: numericPrice,
+      image,
     });
 
     return NextResponse.json(
@@ -85,20 +78,14 @@ export async function POST(request) {
         message: "Laptop added successfully",
         laptop: newLaptop,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    // MongoDB duplicate-key error
-    if (error.code === 11000) {
-      return NextResponse.json(
-        { message: "Laptop title or model already exists" },
-        { status: 409 }
-      );
-    }
+    console.log("POST LAPTOP ERROR:", error);
 
     return NextResponse.json(
       { message: "Failed to add laptop" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -113,54 +100,61 @@ export async function PUT(request) {
     if (!laptopId || !mongoose.Types.ObjectId.isValid(laptopId)) {
       return NextResponse.json(
         { message: "Valid laptop ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const body = await request.json();
+    const { newtitle, newmodel, newprice, newimage } = await request.json();
 
-    const cleanTitle = body.newtitle?.trim();
-    const cleanModel = body.newmodel?.trim();
-    const numericPrice = Number(body.newprice);
+    const cleanTitle = newtitle?.trim();
+    const cleanModel = newmodel?.trim();
+    const numericPrice = Number(newprice);
 
-    if (!cleanTitle || !cleanModel || !body.newprice) {
+    if (!cleanTitle || !cleanModel || !newprice) {
       return NextResponse.json(
         { message: "Title, model and price are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (cleanTitle.length < 2 || cleanModel.length < 2) {
       return NextResponse.json(
         { message: "Title and model must contain at least 2 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (Number.isNaN(numericPrice) || numericPrice <= 0) {
       return NextResponse.json(
         { message: "Laptop price must be greater than 0" },
-        { status: 400 }
+        { status: 400 },
       );
+    }
+
+    const updateData = {
+      title: cleanTitle,
+      model: cleanModel,
+      price: numericPrice,
+    };
+
+    // Update image only when a new image was selected
+    if (newimage) {
+      updateData.image = newimage;
     }
 
     const updatedLaptop = await LaptopModel.findByIdAndUpdate(
       laptopId,
-      {
-        title: cleanTitle,
-        model: cleanModel,
-        price: numericPrice,
-      },
+      updateData,
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     if (!updatedLaptop) {
       return NextResponse.json(
         { message: "Laptop not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -169,19 +163,14 @@ export async function PUT(request) {
         message: "Laptop updated successfully",
         laptop: updatedLaptop,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
-    if (error.code === 11000) {
-      return NextResponse.json(
-        { message: "Laptop title or model already exists" },
-        { status: 409 }
-      );
-    }
+    console.log("PUT LAPTOP ERROR:", error);
 
     return NextResponse.json(
       { message: "Failed to update laptop" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -196,7 +185,7 @@ export async function DELETE(request) {
     if (!laptopId || !mongoose.Types.ObjectId.isValid(laptopId)) {
       return NextResponse.json(
         { message: "Valid laptop ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -205,18 +194,18 @@ export async function DELETE(request) {
     if (!deletedLaptop) {
       return NextResponse.json(
         { message: "Laptop not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json(
       { message: "Laptop deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Failed to delete laptop" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
