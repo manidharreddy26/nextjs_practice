@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "name": "server-action",
+=======
+  "name": "first-project",
+>>>>>>> 57d96f4f333df62b16a424aa1558667f6f21eecc
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,13 +13,20 @@
     "lint": "eslint"
   },
   "dependencies": {
+<<<<<<< HEAD
     "mongoose": "^9.7.3",
+=======
+    "mongoose": "^9.7.1",
+>>>>>>> 57d96f4f333df62b16a424aa1558667f6f21eecc
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "babel-plugin-react-compiler": "1.0.0",
+=======
+>>>>>>> 57d96f4f333df62b16a424aa1558667f6f21eecc
     "eslint": "^9",
     "eslint-config-next": "16.2.9"
   }
